@@ -345,9 +345,14 @@ static bool findVCToolChainViaRegistry(std::string &Path,
                               "InstallDir", VSInstallPath, nullptr) ||
       getSystemRegistryString(R"(SOFTWARE\Microsoft\VCExpress\$VERSION)",
                               "InstallDir", VSInstallPath, nullptr)) {
-    if (!VSInstallPath.empty()) {
+
+    // Visual Studio 6 (VB98, VC6) doesn't have Common7 subdir
+    // So we have to test it for avoiding bad allocation with -1 as size
+    int commonIdePos = VSInstallPath.find(R"(\Common7\IDE)");
+
+    if (!VSInstallPath.empty() && commonIdePos > 0) {
       llvm::SmallString<256> VCPath(llvm::StringRef(
-          VSInstallPath.c_str(), VSInstallPath.find(R"(\Common7\IDE)")));
+          VSInstallPath.c_str(), commonIdePos));
       llvm::sys::path::append(VCPath, "VC");
 
       Path = std::string(VCPath.str());
